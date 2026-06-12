@@ -63,8 +63,18 @@ export interface EngagementReport {
   cautions: string[];
 }
 
+export interface NpiProfile {
+  npi: string;
+  name: string;
+  credential: string;
+  specialty: string;
+  city: string;
+  state: string;
+  organization: string;
+}
+
 export interface AnalysisResult {
-  query: { name: string; therapyArea: string };
+  query: { name: string; therapyArea: string; npi?: string };
   generatedAt: string;
   dataCoverage: {
     publicationsFound: number;
@@ -79,4 +89,5 @@ export interface AnalysisResult {
   report: EngagementReport | null;
   reportError: string | null;
   notes: string[];
+  npiProfile: NpiProfile | null;
 }
