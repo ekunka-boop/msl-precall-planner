@@ -180,3 +180,16 @@ ol.questions li { padding: 7px 0; line-height: 1.5; }
   form.lookup, button, .report-actions { display: none !important; }
   .panel { box-shadow: none; border: 1px solid #ddd; break-inside: avoid; }
 }
+
+/* NPI field + verification */
+.field label .opt { font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--color-plum-60); }
+.npi-verify {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin: 14px 0; padding: 12px 14px; border-radius: 12px;
+  background: var(--color-dusk-15); border: 1px solid var(--color-dusk-30);
+}
+.npi-tag {
+  font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+  color: #fff; background: var(--color-tide); padding: 4px 10px; border-radius: 999px; white-space: nowrap;
+}
+.npi-bits { font-size: 14px; color: var(--color-plum); }

@@ -6,6 +6,7 @@ import type { AnalysisResult } from "@/lib/types";
 export default function Home() {
   const [name, setName] = useState("");
   const [therapyArea, setTherapyArea] = useState("Myasthenia Gravis");
+  const [npi, setNpi] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -20,7 +21,7 @@ export default function Home() {
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name, therapyArea }),
+        body: JSON.stringify({ name, therapyArea, npi }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -65,6 +66,16 @@ export default function Home() {
               placeholder="e.g. Myasthenia Gravis"
               value={therapyArea}
               onChange={(e) => setTherapyArea(e.target.value)}
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="npi">NPI number <span className="opt">(optional)</span></label>
+            <input
+              id="npi"
+              inputMode="numeric"
+              placeholder="e.g. 1234567890"
+              value={npi}
+              onChange={(e) => setNpi(e.target.value.replace(/\D/g, "").slice(0, 10))}
             />
           </div>
           <button className="primary" type="submit" disabled={loading}>
@@ -128,6 +139,21 @@ function Report({ result }: { result: AnalysisResult }) {
       {result.notes.map((n, i) => (
         <div className="notice" key={i}>{n}</div>
       ))}
+
+      {result.npiProfile && (
+        <div className="npi-verify">
+          <span className="npi-tag">NPI verified</span>
+          <span className="npi-bits">
+            <strong>{result.npiProfile.name}</strong>
+            {result.npiProfile.credential ? `, ${result.npiProfile.credential}` : ""}
+            {result.npiProfile.specialty ? ` · ${result.npiProfile.specialty}` : ""}
+            {(result.npiProfile.city || result.npiProfile.state)
+              ? ` · ${[result.npiProfile.city, result.npiProfile.state].filter(Boolean).join(", ")}`
+              : ""}
+            {` · NPI ${result.npiProfile.npi}`}
+          </span>
+        </div>
+      )}
       {result.reportError && <div className="error">{result.reportError}</div>}
 
       {report && (
