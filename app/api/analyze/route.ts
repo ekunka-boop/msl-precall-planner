@@ -3,6 +3,7 @@ import { fetchPublications } from "@/lib/pubmed";
 import { fetchTrials } from "@/lib/clinicaltrials";
 import { buildInfluenceMap, buildTopicTimeline } from "@/lib/influence";
 import { generateReport } from "@/lib/anthropic";
+import { lookupNpi, isValidNpi } from "@/lib/npi";
 import type { AnalysisResult } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -18,18 +19,32 @@ export async function POST(req: NextRequest) {
 
   const name = (body?.name || "").toString().trim();
   const therapyArea = (body?.therapyArea || "").toString().trim();
+  const npi = (body?.npi || "").toString().replace(/\D/g, "");
 
   if (!name) {
     return NextResponse.json({ error: "A physician name is required." }, { status: 400 });
   }
 
+  if (npi && !isValidNpi(npi)) {
+    return NextResponse.json({ error: "That NPI is not valid. It must be a 10-digit number with a correct check digit." }, { status: 400 });
+  }
+
   const notes: string[] = [];
 
   try {
-    const [{ publications, affiliationsByPaper }, trials] = await Promise.all([
+    const npiPromise = npi
+      ? lookupNpi(npi).catch(() => null)
+      : Promise.resolve(null);
+
+    const [{ publications, affiliationsByPaper }, trials, npiProfile] = await Promise.all([
       fetchPublications(name, therapyArea),
       fetchTrials(name, therapyArea),
+      npiPromise,
     ]);
+
+    if (npi && !npiProfile) {
+      notes.push("The NPI was a valid format but no matching provider was found in the CMS NPPES registry. The report below is based on the name and therapy area.");
+    }
 
     if (!publications.length) {
       notes.push(
@@ -58,7 +73,7 @@ export async function POST(req: NextRequest) {
     }
 
     const result: AnalysisResult = {
-      query: { name, therapyArea },
+      query: { name, therapyArea, npi: npi || undefined },
       generatedAt: new Date().toISOString(),
       dataCoverage: {
         publicationsFound: publications.length,
@@ -73,6 +88,7 @@ export async function POST(req: NextRequest) {
       report,
       reportError,
       notes,
+      npiProfile,
     };
 
     return NextResponse.json(result);
