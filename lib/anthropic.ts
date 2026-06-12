@@ -57,10 +57,15 @@ function compactTrials(trials: ClinicalTrial[]): string {
 }
 
 function extractJson(text: string): any {
-  const start = text.indexOf("{");
-  const end = text.lastIndexOf("}");
+  // Strip markdown code fences the model sometimes adds.
+  let t = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
+  const start = t.indexOf("{");
+  const end = t.lastIndexOf("}");
   if (start === -1 || end === -1) throw new Error("No JSON object in model response");
-  return JSON.parse(text.slice(start, end + 1));
+  const slice = t.slice(start, end + 1);
+  // Remove trailing commas before a closing } or ] so minor model slips still parse.
+  const cleaned = slice.replace(/,(\s*[}\]])/g, "$1");
+  return JSON.parse(cleaned);
 }
 
 export async function generateReport(input: ReportInput): Promise<EngagementReport> {
@@ -101,7 +106,7 @@ Produce the engagement report JSON now.`;
     },
     body: JSON.stringify({
       model,
-      max_tokens: 2000,
+      max_tokens: 8000,
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: userContent }],
     }),
